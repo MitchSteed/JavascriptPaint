@@ -11,63 +11,121 @@ var model = {
     getShapes: function(){
 
     }
-}
+};
 
 var drawingController = {
+    init: function() {},
+    initLine: function(position) {
+        var line = {
+            "type": "line",
+            "point1": {
+                "x":position.x,
+                "y":position.y
+            },
+            "point2": {
+                "x":position.x,
+                "y":position.y
+            },
+            "color": controller.getCurrentColor()
+        };
+        controller.setNewCurrentShape(line);
+    },
+    draggedLine: function(position) {
+         controller.currentShape["point2"] = {
+            "x":position.x,
+            "y":position.y
+        };
+    },
+    initSquare: function(position) {
+        var square = {
+            "type":"square",
+            "topLeftCorner": {
+                "x":position.x,
+                "y":position.y
+            },
+            "width":0,
+            "height":0,
+            "color": controller.getCurrentColor()
+        };
+        drawingController.initPoint = position;
+        controller.setNewCurrentShape(square);
+    },
+    draggedSquare: function(position) {
+        controller.currentShape["width"] = position.x - drawingController.initPoint.x;
+        controller.currentShape["height"] = position.y - drawingController.initPoint.y;
+    },
+    initRectangle: function(position) {
+        var rectangle = {
+            "type":"rectangle",
+            "topLeftCorner": {
+                "x":position.x,
+                "y":position.y
+            },
+            "width":0,
+            "height":0,
+            "color": controller.getCurrentColor()
+        };
+        drawingController.initPoint = position;
+        controller.setNewCurrentShape(rectangle);
+    },
+    draggedRectangle: function(position) {
+        controller.currentShape["width"] = position.x - drawingController.initPoint.x;
+        controller.currentShape["height"] = position.y - drawingController.initPoint.y;
+    },
+};
+
+var mouseController = {
     init: function() {
-        drawingController.mouseIsPressed = false;
+        mouseController.mouseIsPressed = false;
     },
     mouseClicked: function(event) {
 
     },
     mousePressed: function(event) {
         if(controller.drawingMode) {
-            drawingController.mouseIsPressed = true;
-            position = drawingController.getMousePosition(event);
+            mouseController.mouseIsPressed = true;
+            position = mouseController.getMousePosition(event);
             if(debugMode) {
                 console.log("Mouse Pressed")
-                drawingController.printPosition(position);
+                mouseController.printPosition(position);
             }
             if (controller.currentMode === modes["line"]) {
-                var line = {
-                    "type": "line",
-                    "point1": {
-                        "x":position.x,
-                        "y":position.y
-                    },
-                    "point2": {
-                        "x":position.x,
-                        "y":position.y
-                    },
-                    "color": controller.getCurrentColor()
-                }
-                controller.setNewCurrentShape(line);
+                drawingController.initLine(position);
+            }
+            else if (controller.currentMode === modes["square"]) {
+                drawingController.initSquare(position);
+            }
+            else if (controller.currentMode === modes["rectangle"]) {
+                drawingController.initRectangle(position);
             }
             controller.render();
         }
     },
     mouseDragged: function(event) {
-        if (drawingController.mouseIsPressed && controller.drawingMode) {
-            position = drawingController.getMousePosition(event);
+        if (mouseController.mouseIsPressed && controller.drawingMode) {
+            position = mouseController.getMousePosition(event);
             if(debugMode) {
                 console.log("Mouse Dragged");
-                drawingController.printPosition(position);
+                mouseController.printPosition(position);
             }
             if (controller.currentMode === modes["line"]) {
-                controller.currentShape["point2"] = {
-                    "x":position.x,
-                    "y":position.y
-                }
+                drawingController.draggedLine(position);
+            }
+            else if (controller.currentMode === modes["square"]) {
+                drawingController.draggedSquare(position);
+            }
+            else if (controller.currentMode === modes["rectangle"]) {
+                drawingController.draggedRectangle(position);
             }
             controller.render();
         }
     },
     mouseReleased: function(event) {
         if(controller.drawingMode) {
-            drawingController.mouseIsPressed = false;
+            mouseController.mouseIsPressed = false;
             if(debugMode) {
                 console.log("Mouse Released");
-                drawingController.printPosition(position);
+                mouseController.printPosition(position);
             }
             controller.render();
         }
@@ -141,9 +199,9 @@ var controller = {
             controller.drawingMode = false;
         });
         // add canvas listeners
-        $("#main-canvas").on("mousedown", drawingController.mousePressed);
-        $("#main-canvas").on("mousemove", drawingController.mouseDragged);
-        $("#main-canvas").on("mouseup", drawingController.mouseReleased);
+        $("#main-canvas").on("mousedown", mouseController.mousePressed);
+        $("#html").on("mousemove", mouseController.mouseDragged);
+        $("#html").on("mouseup", mouseController.mouseReleased);
     },
     getCurrentColor: function() {
         return $("#color-picker").val();
@@ -206,6 +264,14 @@ var canvasView = {
                 context.lineTo(shape["point2"]["x"], shape["point2"]["y"]);
                 context.strokeStyle = "#" + shape["color"];
                 context.stroke();
+            }
+            else if (shape["type"] === "square" || shape["type"] ==="rectangle") {
+                context.rect(shape["topLeftCorner"]["x"],
+                    shape["topLeftCorner"]["y"],
+                    shape["width"],
+                    shape["height"])
+                    context.fillStyle = "#" + shape["color"];
+                    context.fill();
             }
         });
     }
